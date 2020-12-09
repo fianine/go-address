@@ -41,11 +41,12 @@ func GetAddress(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// User address by id user
 func UserAddress(w http.ResponseWriter, r *http.Request) {
 	connection, _ := config.ConnectSQL()
 	defer connection.SQL.Close()
 
-	userID := r.URL.Query().Get("userID")
+	userID := r.URL.Query().Get("user_id")
 
 	row := connection.SQL.QueryRow("SELECT * FROM addresses WHERE user_id = ?", userID)
 
@@ -65,4 +66,37 @@ func UserAddress(w http.ResponseWriter, r *http.Request) {
 		Message: "Ok",
 		Data:    []model.Model{address},
 	})
+}
+
+func AddUserAddress(w http.ResponseWriter, r *http.Request) {
+	connection, err := config.ConnectSQL()
+	defer connection.SQL.Close()
+
+	parseErr := r.ParseForm()
+	if parseErr != nil {
+		panic(parseErr)
+	}
+
+	userID := r.Form.Get("user_id")
+	address := r.Form.Get("address")
+	city := r.Form.Get("city")
+	province := r.Form.Get("province")
+
+	_, err = connection.SQL.Exec("INSERT INTO addresses (user_id, address, city, province) values (?,?,?,?)",
+		userID,
+		address,
+		city,
+		province,
+	)
+
+	if err != nil {
+		log.Print(err)
+	}
+
+	response := model.Response{
+		Status:  201,
+		Message: "Success",
+	}
+
+	responseWithJson(w, response)
 }
